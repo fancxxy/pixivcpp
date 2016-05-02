@@ -1,7 +1,4 @@
-pcollect
-========
+# pixivcpp
 
-pixiv download script
+pixiv download program, written in C++11, depend on libcurl and jsoncpp
 
-pcollect id
-支持漫画集和动态图，可批量下载画师作品
