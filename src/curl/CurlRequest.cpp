@@ -2,6 +2,8 @@
 #include "CurlUtils.h"
 
 #include <utility>
+#include <sstream>
+#include <fstream>
 
 CurlRequest::CurlRequest() : 
     curl_(newContainer(), &deleteContainer) {
@@ -54,19 +56,27 @@ void CurlRequest::setGet() {
     }
 }
 
-CurlResponse CurlRequest::makeRequest(const CurlUrl &url, const CurlParams &params) {
+CurlResponse CurlRequest::makeRequest(const CurlUrl &url, const CurlParams &params, const std::string &file) {
     auto curl = curl_->handle;
+    std::stringstream response_string;
+    std::fstream response_file;
+
     if (!params.empty()) {
         curl_easy_setopt(curl, CURLOPT_URL, (url + "?" + mergeParams(params)).c_str());
     } else {
         curl_easy_setopt(curl, CURLOPT_URL, url.c_str());
     }
 
-    curl_->error[0] = '\0';
+    if (file.empty()) {
+        curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, writeStream<std::stringstream>);
+        curl_easy_setopt(curl, CURLOPT_WRITEDATA, &response_string);
+    } else {
+        response_file.open(file, std::ios::out | std::ios::binary);
+        curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, writeStream<std::fstream>);
+        curl_easy_setopt(curl, CURLOPT_WRITEDATA, &response_file);
+    }
 
-    std::stringstream response_text;
-    curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, writeStream<std::stringstream>);
-    curl_easy_setopt(curl, CURLOPT_WRITEDATA, &response_text);
+    curl_->error[0] = '\0';
 
     //curl_easy_setopt(curl, CURLOPT_PROXY, "127.0.0.1:8888");
     //curl_easy_setopt(curl, CURLOPT_SSL_VERIFYPEER, 0L);
@@ -90,17 +100,22 @@ CurlResponse CurlRequest::makeRequest(const CurlUrl &url, const CurlParams &para
     }
     curl_slist_free_all(p_cookies);
     
-    return CurlResponse(std::move(response_code), response_text.str(), std::move(response_cookies));
+    if (file.empty()) {
+        return CurlResponse(std::move(response_code), response_string.str(), std::move(response_cookies));
+    } else {
+        response_file.close();
+        return CurlResponse(std::move(response_code), std::string(), std::move(response_cookies));
+    }
 }
 
-CurlResponse CurlRequest::CurlGet(CurlUrl url, CurlHeader header, CurlParams params) {
+CurlResponse CurlRequest::CurlGet(CurlUrl url, CurlHeader header, CurlParams params, const std::string &file) {
     setHeader(header);
     setGet();
-	return makeRequest(url, params); 
+	return makeRequest(url, params, file); 
 }
 
 CurlResponse CurlRequest::CurlPost(CurlUrl url, CurlData data, CurlHeader header, CurlParams params) {
     setHeader(header);
     setData(data);
-	return makeRequest(url, params); 
+	return makeRequest(url, params, std::string()); 
 }

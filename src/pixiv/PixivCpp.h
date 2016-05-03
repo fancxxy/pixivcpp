@@ -12,7 +12,7 @@ class PixivCpp
         void DownloadWorks(const std::string &illust_id);
 
     private: 
-        void download_(const CurlUrl &url, const std::string &file_name);
+        void PixivDownload(const CurlUrl &url, const std::string &file_name);
 
         CurlRequest request_;
         std::string access_token_;

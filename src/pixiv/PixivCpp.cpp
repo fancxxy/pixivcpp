@@ -49,11 +49,12 @@ const std::string PixivCpp::works(const std::string &illust_id) {
 }
 
 void PixivCpp::DownloadWorks(const std::string &illust_id) {
-    std::string original_url, file_name;
-    std::string response_text = works(illust_id);            
+    CurlUrl original_url;
+    std::string file_name;
+    std::string response_json = works(illust_id);            
 
-    //CurlUrl original_url = parseJson(response_text, "response", 0, "image_urls", "large");
-    Json::Value result = parseJson(response_text);
+    //CurlUrl original_url = parseJson(response_json, "response", 0, "image_urls", "large");
+    Json::Value result = parseJson(response_json);
     int page_count = std::stoi(result["response"][0]["page_count"].asString());
 
     std::cout << "page_count: " << page_count << std::endl;
@@ -63,20 +64,17 @@ void PixivCpp::DownloadWorks(const std::string &illust_id) {
         else
             original_url = result["response"][0]["metadata"]["pages"][i]["image_urls"]["large"].asString();
 
-        std::cout << i << ": " << original_url << std::endl;
+        std::cout << i + 1 << ": " << original_url << std::endl;
 
         file_name = original_url.substr(original_url.rfind("/")+1);
-        download_(original_url, file_name);
+        PixivDownload(original_url, file_name);
     }
 }
 
-void PixivCpp::download_(const CurlUrl &url, const std::string &file_name) {
+void PixivCpp::PixivDownload(const CurlUrl &url, const std::string &file_name) {
     CurlHeader header = {
         {"Referer", "http://www.pixiv.net/"},
     };
 
-    CurlResponse response = request_.CurlGet(url, header);
-
-    std::ofstream file(file_name, std::ios::out);
-    file << response.text;
+    CurlResponse response = request_.CurlGet(url, header, {}, file_name);
 }

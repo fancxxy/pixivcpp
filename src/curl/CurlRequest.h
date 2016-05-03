@@ -9,7 +9,7 @@ class CurlRequest
 { 
     public: 
         CurlRequest();
-        CurlResponse CurlGet(CurlUrl url, CurlHeader header = {}, CurlParams params = {});
+        CurlResponse CurlGet(CurlUrl url, CurlHeader header = {}, CurlParams params = {}, const std::string &file = "");
         CurlResponse CurlPost(CurlUrl url, CurlData data, CurlHeader header = {}, CurlParams params = {});
 
     private: 
@@ -19,7 +19,7 @@ class CurlRequest
         void setHeader(const CurlHeader &header);
         void setData(const CurlData &data);
         void setGet();
-        CurlResponse makeRequest(const CurlUrl &url, const CurlParams &params);
+        CurlResponse makeRequest(const CurlUrl &url, const CurlParams &params, const std::string &file);
 
         std::unique_ptr<CurlContainer, std::function<void(CurlContainer*)>> curl_;
 }; 
