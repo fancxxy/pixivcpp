@@ -108,13 +108,15 @@ CurlResponse CurlRequest::makeRequest(const CurlUrl &url, const CurlParams &para
     }
 }
 
-CurlResponse CurlRequest::CurlGet(CurlUrl url, CurlHeader header, CurlParams params, const std::string &file) {
+CurlResponse CurlRequest::CurlGet(const CurlUrl &url, const CurlHeader &header, 
+        const CurlParams &params, const std::string &file) {
     setHeader(header);
     setGet();
 	return makeRequest(url, params, file); 
 }
 
-CurlResponse CurlRequest::CurlPost(CurlUrl url, CurlData data, CurlHeader header, CurlParams params) {
+CurlResponse CurlRequest::CurlPost(const CurlUrl &url, const CurlData &data, 
+        const CurlHeader &header, const CurlParams &params) {
     setHeader(header);
     setData(data);
 	return makeRequest(url, params, std::string()); 

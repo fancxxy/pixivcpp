@@ -6,7 +6,25 @@
 #include <fstream> 
 #include <vector>
 
-PixivCpp::PixivCpp(const std::string username, const std::string password)
+PixivCpp::PixivCpp()
+{
+    std::string username, password;
+
+    std::ifstream ifile(".pixiv", std::ios::in | std::ios::binary);
+    if (ifile.good()) {
+        ifile >> username >> password;
+    } else {
+        std::cout << "input username and password: ";
+        std::cin >> username >> password;
+
+        std::ofstream ofile(".pixiv", std::ios::out | std::ios::binary);
+        ofile << username << " " << password;
+    }
+
+    PixivOauth(username, password);
+}
+
+void PixivCpp::PixivOauth(const std::string &username, const std::string &password)
 {
     CurlUrl url = "https://oauth.secure.pixiv.net/auth/token";
 
@@ -14,6 +32,7 @@ PixivCpp::PixivCpp(const std::string username, const std::string password)
         {"username", username},
         {"password", password},
         {"grant_type", "password"},
+        {"device_token", "912f2f55833618abc5de13b27e9e0e65"},
         {"client_id", "bYGKuGVw91e0NMfPGp44euvGt59s"},
         {"client_secret", "HP3RmkgAmEGro0gn1x9ioawQE8WMfvLXDz3ZqxpK"}
     };
@@ -21,12 +40,10 @@ PixivCpp::PixivCpp(const std::string username, const std::string password)
     CurlHeader header = {
         {"Referer", "http://www.pixiv.net/"}
     };
-
+    
     CurlResponse response = request_.CurlPost(url, data, header);
 
-    Json::Value result =  parseJson(response.text);
-    refresh_token_ = result["response"]["refresh_token"].asString();
-    access_token_ = result["response"]["access_token"].asString();
+    access_token_ =  parseJson(response.text, "response", "access_token");
 }
 
 const std::string PixivCpp::works(const std::string &illust_id) {

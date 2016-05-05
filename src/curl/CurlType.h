@@ -22,6 +22,10 @@ struct CurlData
     CurlData(const std::initializer_list<std::pair<const std::string, std::string>> &p_data) : 
         data(p_data), content() {} 
 
+    std::string& operator[](const std::string &str) {
+        return data[str];
+    }
+
     std::map<std::string, std::string> data;
     mutable std::string content;
 };

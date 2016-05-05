@@ -9,8 +9,10 @@ class CurlRequest
 { 
     public: 
         CurlRequest();
-        CurlResponse CurlGet(CurlUrl url, CurlHeader header = {}, CurlParams params = {}, const std::string &file = "");
-        CurlResponse CurlPost(CurlUrl url, CurlData data, CurlHeader header = {}, CurlParams params = {});
+        CurlResponse CurlGet(const CurlUrl &url, const CurlHeader &header = {}, 
+                const CurlParams &params = {}, const std::string &file = "");
+        CurlResponse CurlPost(const CurlUrl &url, const CurlData &data, 
+                const CurlHeader &header = {}, const CurlParams &params = {});
 
     private: 
         static CurlContainer* newContainer();
