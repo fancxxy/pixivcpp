@@ -75,25 +75,27 @@ const std::string PixivCpp::GetWorks(const std::string &illust_id) {
     };
 
     CurlResponse response = request_.CurlGet(url, header, params);
-    styleJson(illust_id, response.text);
     return response.text;
 }
 
-const std::string PixivCpp::GetFavorite(const std::string page, 
+const std::string PixivCpp::GetFavorite(int page, 
         const std::string per_page, 
-        const std::string publicity, 
-        const std::string image_sizes) {
+        const std::string publicity) { 
     CurlUrl url = "https://public-api.secure.pixiv.net/v1/me/favorite_works.json";
 
     CurlParams params = {
-        {"page", page},
         {"per_page", per_page},
-        {"publicity", publicity},
-        {"image_sizes", image_sizes}
+        {"image_sizes", "px_128x128,px_480mw,large"},
+        {"include_work", "true"},
+        {"include_sanity_level", "true"},
+        {"profile_image_sizes", "px_170x170,px_50x50"},
+        {"include_stats", "true"},
+        {"page", std::to_string(page)},
+        {"publicity", publicity}
     };
 
     CurlHeader header = {
-        {"Referer", "http://www.pixiv.net/"},
+        {"Referer", "http://spapi.pixiv-app.net/"},
         {"Authorization", "Bearer " + access_token_}
     };
 
@@ -113,19 +115,22 @@ void PixivCpp::DownloadWorks(const std::string &illust_id) {
     }
 }
 
-void PixivCpp::DownloadFavorite(const std::string page, 
-        const std::string per_page, 
-        const std::string publicity, 
-        const std::string image_sizes) {
-    std::string response = GetFavorite(page, per_page, publicity, image_sizes);
+void PixivCpp::DownloadFavorite() {
+    bool next = false;
+    int current = 0;
+    do {
+        std::string response = GetFavorite(++current);
+        Json::Value json = parseJson(response);
+        int count = json["count"].asInt();
+        next = json["pagination"]["next"].asBool();
 
-    Json::Value json = parseJson(response);
-    if (json["status"] == "success") {
-        for (int count = 0; count < json["count"].asInt(); count++) {
-            Json::Value favorite = json["response"][count]["work"];
-            PixivDownload(favorite);
+        if (json["status"] == "success") {
+            for (int i = 0; i != count; i++) {
+                Json::Value favorite = json["response"][i]["work"];
+                PixivDownload(favorite);
+            }
         }
-    }
+    } while (next);
 }
 
 void PixivCpp::PixivDownload(const Json::Value &root) {
@@ -135,23 +140,26 @@ void PixivCpp::PixivDownload(const Json::Value &root) {
     };
 
 
-    std::string file_name;
+    std::string id = root["id"].asString();
     int page_count = root["page_count"].asInt(); 
+    std::string large = root["image_urls"]["large"].asString();
+
+    std::string url_prefix = large.substr(0, large.rfind("/") + 1);
+    std::string url_sufix = large.substr(large.rfind("."));
+    std::string file_name;
     
-    std::cout << "id: " << root["id"].asString() << std::endl;
+    std::cout << "id: " << id << std::endl;
     std::cout << "title: " << root["title"].asString() << std::endl;
     std::cout << "caption: " << root["caption"].asString() << std::endl;
     std::cout << "page_count: " << page_count << std::endl;
 
     for (int i = 0; i < page_count; i++) {
-        if (page_count == 1)
-            url = root["image_urls"]["large"].asString();
-        else
-            url = root["metadata"]["pages"][i]["image_urls"]["large"].asString();
-
+        file_name = id + "_p" + std::to_string(i) + url_sufix;
+        url = url_prefix + file_name;
         std::cout << i + 1 << ": " << url << std::endl;
 
-        file_name = url.substr(url.rfind("/")+1);
         request_.CurlGet(url, header, {}, file_name);
     }
+
+    std::cout << "--------------------------------" << std::endl;
 }
