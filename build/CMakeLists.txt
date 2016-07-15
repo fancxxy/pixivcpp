@@ -4,6 +4,7 @@ project(pixivcpp)
 
 set(SRC_LIST ../src/curl/CurlRequest.cpp
              ../src/pixiv/PixivCpp.cpp
+             ../src/pixiv/CmdlineOption.cpp
              ../src/main.cpp)
 
 
